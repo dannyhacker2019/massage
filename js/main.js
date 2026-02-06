@@ -125,7 +125,7 @@ form.addEventListener('submit', async (e) => {
   };
 
   try {
-    const res = await fetch('http://127.0.0.1:5000/book', { // Update to live URL later
+    const res = await fetch('https://massage-production-7c6c.up.railway.app/book', { // Update to live URL later
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
