@@ -1,6 +1,6 @@
 Flask==2.3.3
 Flask-Mail==0.9.1
-Flask-Cors==4.2.2
+Flask-Cors==3.0.10
 sendgrid==6.10.1
 gunicorn==25.0.1
 python-dotenv==1.1.1
