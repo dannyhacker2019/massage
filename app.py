@@ -3,24 +3,23 @@ from flask_cors import CORS
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from dotenv import load_dotenv
+
+# --- Load local .env variables (for local testing) ---
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 # --- Environment variables ---
-# SENDGRID_API_KEY -> your SendGrid API key
-# SENDER_EMAIL -> verified SendGrid sender email
-# RECEIVER_EMAIL -> email to receive booking notifications
-
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 
 if not SENDGRID_API_KEY or not SENDER_EMAIL or not RECEIVER_EMAIL:
-    raise Exception("Please set SENDGRID_API_KEY, SENDER_EMAIL, and RECEIVER_EMAIL environment variables")
+    raise Exception("Please set SENDGRID_API_KEY, SENDER_EMAIL, and RECEIVER_EMAIL")
 
 # --- Routes ---
-
 @app.route("/book", methods=["POST"])
 def book():
     data = request.json
@@ -69,6 +68,6 @@ def home():
 
 
 if __name__ == "__main__":
-    # Use Railway port or default 5000 for local testing
+    # Use Railway's PORT variable if exists, otherwise default to 5000 for local
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
