@@ -121,7 +121,7 @@ form.addEventListener('submit', async (e) => {
     phone: form.phone.value,
     service: form.service.value,
     date: form.date.value,
-    message: form.message.value
+    //message: form.message.value
   };
 
   try {
