@@ -1,43 +1,40 @@
 from flask import Flask, request, jsonify
-from flask_mail import Mail, Message
 from flask_cors import CORS
 import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 app = Flask(__name__)
 CORS(app)
 
-# ----------------------------
-# Flask-Mail configuration
-# ----------------------------
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  # your Gmail
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')  # Gmail App Password
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+# --- Environment variables ---
+# SENDGRID_API_KEY -> your SendGrid API key
+# SENDER_EMAIL -> verified SendGrid sender email
+# RECEIVER_EMAIL -> email to receive booking notifications
 
-mail = Mail(app)
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 
-# ----------------------------
-# Booking endpoint
-# ----------------------------
-@app.route('/book', methods=['POST'])
+if not SENDGRID_API_KEY or not SENDER_EMAIL or not RECEIVER_EMAIL:
+    raise Exception("Please set SENDGRID_API_KEY, SENDER_EMAIL, and RECEIVER_EMAIL environment variables")
+
+# --- Routes ---
+
+@app.route("/book", methods=["POST"])
 def book():
     data = request.json
 
-    name = data.get('name')
-    phone = data.get('phone')
-    service = data.get('service')
-    date = data.get('date')
-    message = data.get('message', '')
+    name = data.get("name")
+    phone = data.get("phone")
+    service = data.get("service")
+    date = data.get("date")
+    message = data.get("message", "")
 
     if not name or not phone:
-        return jsonify({'error': 'Missing required fields'}), 400
+        return jsonify({"error": "Missing required fields"}), 400
 
-    msg = Message(
-        subject='New Booking Request',
-        recipients=[os.getenv('RECEIVER_EMAIL')],  # where you want to receive bookings
-        body=f"""
+    email_content = f"""
 New Massage Booking Request 💆‍♀️
 
 Name: {name}
@@ -47,24 +44,31 @@ Preferred Date: {date}
 
 Notes:
 {message}
-        """
+    """
+
+    email = Mail(
+        from_email=SENDER_EMAIL,
+        to_emails=RECEIVER_EMAIL,
+        subject="New Booking Request",
+        plain_text_content=email_content
     )
 
     try:
-        mail.send(msg)
-        print(f"[INFO] Booking email sent for {name}")
-        return jsonify({'status': 'success'})
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(email)
     except Exception as e:
-        # Log the error and return it in the response
-        print(f"[ERROR] Failed to send email: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        print("Error sending email:", e)
+        return jsonify({"error": "Failed to send email"}), 500
 
-@app.route('/')
+    return jsonify({"status": "success"})
+
+
+@app.route("/")
 def home():
-    return 'Backend is running'
+    return "Backend is running"
 
-if __name__ == '__main__':
-    # Make sure environment variables are set before running
-    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD') or not os.getenv('RECEIVER_EMAIL'):
-        print("[WARNING] Please set MAIL_USERNAME, MAIL_PASSWORD, and RECEIVER_EMAIL environment variables")
-    app.run(debug=True)
+
+if __name__ == "__main__":
+    # Use Railway port or default 5000 for local testing
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
